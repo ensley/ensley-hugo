@@ -1,22 +1,22 @@
-baseurl = "http://hugo.spf13.com/"
+baseurl = "/"
 languageCode = "en-us"
-title = "Hugo Future Imperfect"
+title = "John Ensley"
 theme = "hugo-future-imperfect"
 preserveTaxonomyNames = true
 paginate = 3
-disqusShortname = "shortname"
+disqusShortname = "ensley"
 googleAnalytics = ""
 
 [params]
     # Sets the meta tag description, usually reserved for the main page
-    description          = "HTML5 UP theme, Future Imperfect with some extra goodies, ported by Julio Pescador. Powered by Hugo"
+    description          = "A blog for my research and personal projects"
     # This will appear on the top left of the navigation bar
-    navbarTitle          = "Future Imperfect"
+    navbarTitle          = "John Ensley"
     # Social media buttons that appear on the sidebar
     socialAppearAtTop    = true
     socialAppearAtBottom = true
     # set this to the section name if section is not post
-    viewMorePostLink     = "/blog/"
+    viewMorePostLink     = "/post/"
 
 # Optional Params
     categoriesByCount    = true
@@ -41,40 +41,40 @@ googleAnalytics = ""
 # parms.intro will appear on the sidebar
 # This is optional, but it's suggested to use
 [params.intro]
-    header    = "Hugo Future Imperfect"
+    header    = "John Ensley"
 
-    paragraph = "Another fine responsive site template by <a href=\"http://html5up.net\">HTML5 UP</a>. Ported by Julio Pescador with some extra goodies <i class='fa fa-hand-peace-o'></i>"
+    paragraph = "A blog for my research and personal projects"
 
-    about     = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent tellus lacus, auctor vehicula molestie quis, tempor quis velit. Quisque in quam ac leo efficitur vulputate. Phasellus ullamcorper aliquam sodales. Maecenas sit amet condimentum ipsum. Proin sit amet ligula elit. Mauris."
+    about     = "I am a graduate student and aspiring photographer. Currently I'm working toward a Ph.D. in statistics from Penn State University. My interests include statistical computing methods, Bayesian inference, and nonparametric statistics as they apply to spatial statistics and climate science."
 
 # This will also appear on the sidebar.
 # A width of less than 100px is recommended
 # This is optional
 [params.intro.pic]
-    src       = "/img/main/logo.jpg"
+    src       = "/img/main/ensley.jpg"
     # modify your picture in the shape of a circle or
     # future imperfect's hexagonal shape
     circle    = false
     imperfect = true
     width     = ""
-    alt       = "Hugo Future Imperfect"
+    alt       = "John Ensley"
 
 # Adjust the amount of recent posts on the sidebar.
 # This is optional. The default value 5 will be used
 [params.postAmount]
-    sidebar = 2
+    sidebar = 4
 
 # Set up your menu items in the navigation bar
 # You can use identifier to prepend a font awesome icon to your text
 [[menu.main]]
     name = "Blog"
-    url = "/blog"
+    url = "/post"
     identifier = "fa fa-newspaper-o"
     weight = 1
 
 [[menu.main]]
     name = "Categories"
-    url = "/categories"
+    url = "/categories/"
     weight = 2
 
 [[menu.main]]
@@ -86,7 +86,7 @@ googleAnalytics = ""
 # socialAppearAtTop or socialAppearAtBottom is set to true in the params area
 # The social media icons will appear on the sidebar
 [social]
-    github          = "jpescador"
+    github          = "ensley"
     bitbucket       = ""
     jsfiddle        = ""
     codepen         = ""
@@ -103,14 +103,14 @@ googleAnalytics = ""
     wordpress       = ""
     tumblr          = ""
     xing            = ""
-    linkedin        = ""
+    linkedin        = "john-ensley-61455986"
     slideshare      = ""
     stackoverflow   = ""
     reddit          = ""
     pinterest       = ""
     googleplus      = ""
-    facebook        = ""
+    facebook        = "ensley92"
     facebook_admin  = ""
     twitter_domain  = ""
-    twitter         = "julio_pescador"
-    email           = ""
+    twitter         = "ensley92"
+    email           = "ensley@psu.edu"

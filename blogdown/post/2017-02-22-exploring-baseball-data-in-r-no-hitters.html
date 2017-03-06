@@ -1,0 +1,37 @@
+---
+title: 'Exploring Baseball Data in R: No-Hitters'
+date: '2017-02-22'
+categories:
+  - Sports
+tags:
+  - Baseball
+  - R
+  - Rstats
+  - Retrosheet
+draft: true
+---
+
+<!-- BLOGDOWN-HEAD -->
+
+
+
+<!-- /BLOGDOWN-HEAD -->
+
+<!-- BLOGDOWN-BODY-BEFORE -->
+
+<!-- /BLOGDOWN-BODY-BEFORE -->
+
+<p>Baseball was probably my first introduction to statistics. I remember being about ten years old and playing APBA Baseball, an old tabletop baseball game, in my room. APBA might be the nerdiest sports-related activity possible. You simulate Major League Baseball games, one batter at a time, using just a pair of dice. You are the manager of whatever team you choose; your roster is a deck of cards, one for each player. Each card lists every possible dice outcome with a corresponding number, which you then look up in the game manual to find the result of the at bat. Common outcomes, like groundouts or flyouts, appear many times on each player’s card, while home runs might only happen on a roll of double sixes. (This was the early 2000s, though, so homers probably made up half the outcomes on the Barry Bonds card.) It’s a little embarrassing that I played this game. It really was just Dungeons and Dragons with baseball players.</p>
+<div class="figure">
+<img src="/img/2017/02/APBA_cards.JPG" alt="Yes, I managed both teams and played against myself. My friends were never interested in playing with me. I can’t imagine why." />
+<p class="caption">Yes, I managed both teams and played against myself. My friends were never interested in playing with me. I can’t imagine why.</p>
+</div>
+<p>I loved playing through games (as the Atlanta Braves – getting shut out over and over with my awful hometown Pirates was not fun) and keeping score. I would even try to set up Excel spreadsheets to track my players’ batting averages throughout a made-up season. Although, being ten, I never made it through more than a handful of games before losing interest and starting over. But I loved baseball, and statistics plays such an important role in the sport that you can’t love baseball without developing an appreciation for statistics. And if you are already familiar with it, baseball is an excellent way to become comfortable with statistical concepts.</p>
+<p>As this year’s baseball season was winding down, I began to notice how frequently I would get alerts from the MLB phone app that said “So-and-so has a no-hitter through 7 innings.” Almost every time, it seemed, I would get another one ten minutes later saying “So-and-so’s no hitter was broken up on a base hit with two outs in the 8th.” It got me wondering if potential no-hitters get broken up disproportionately often in later innings.</p>
+<p>I’m interested here in the number of outs recorded by the starting pitcher before he allows his first hit of the game. If you’ve ever taken a stats class, you might recognize this as a textbook example of the geometric distribution. Flip a coin until you get heads for the first time, and write down the number of flips it took. You just generated a geometrically distributed random variable. Now replace the coin flips with at bats, and “heads” with “base hit,” and it’s clear that this might be a good model for what is going on.</p>
+<div class="figure">
+<img src="/img/2017/02/geometrif.gif" alt="This is what the distribution of coin flips until the first head might look like if you repeated this over and over again. Notice that half of the time, you get heads on the first flip and are done right away. As you’d expect, you will have very few instances where you get more than, say, 10 or more tails before the first heads." />
+<p class="caption">This is what the distribution of coin flips until the first head might look like if you repeated this over and over again. Notice that half of the time, you get heads on the first flip and are done right away. As you’d expect, you will have very few instances where you get more than, say, 10 or more tails before the first heads.</p>
+</div>
+<p>But how good is it really? When we flip a coin, the outcome of each flip is not affected by any of the previous flips. A fair coin has a 50% chance of coming up heads, on the first flip and on the thousandth flip. This independence is crucial; without it we wouldn’t have a geometric distribution at all. But in the context of baseball, it’s pretty hard to believe that at bats truly are independent from one another. First of all, some hitters are better than others. A pitcher has a better chance of recording an out against the opposing pitcher than against, say, Mike Trout. Second, pitchers tire out as games go on, and a tired pitcher might be more likely to make a mistake and throw an easily hittable pitch. Finally, the closer a pitcher gets to a no-hitter, the more pressure he is under. In the 9th inning, after getting 24 outs without allowing a hit, the focus of the baseball world is on him. No-hitters are a rare occurrence, so television stations will cut away to broadcast his attempt to get those final few outs and make history. It is easy to imagine this pressure affecting the pitcher’s ability to make good pitches. This is the reason I thought I might see more no-hit bids end in the 8th and 9th innings than would be expected under a geometric distribution.</p>
+<p>To test this out, I needed some data. “Outs before the first hit” isn’t exactly something that shows up in a boxscore, and even if it was, there’s no way I would want to manually pull it out of every boxscore for all 2,430 games in a season. Instead, I used <a href="http://www.retrosheet.org/">Retrosheet</a>. Retrosheet is an amazing, free resource that has not only box scores, but play by play information for almost every game going back nearly a century. If you want to know how many times Brooks Robinson grounded out to second base in road games in 1962, it’s in there. You’re a weirdo, but it’s in there.</p>

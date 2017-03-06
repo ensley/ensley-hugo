@@ -1,0 +1,178 @@
+---
+title: Replacing Slow R Code with CUDA
+date: '2016-09-16'
+categories: ["Research"]
+tags: ["C", "R", "Rstats", "CUDA", "Research", "GPU"]
+---
+
+## The Problem
+
+Suppose we have a vector $\{x_i: i = 1, \dots, N\}$ and a collection of $\{s_j: j = 1, \dots, M\}$ random samples. For each $x_j$, we want to calculate
+$$
+\frac{1}{M} \sum_{j=1}^M \cos(x_is_j).
+$$
+
+## Naive R Solution
+
+If you were new to R, you might do something like this:
+
+```{r, eval = F}
+func1 <- function(x, s) {
+  N <- length(x)
+  M <- length(s)
+  y <- rep(0, N)
+   
+  for(i in 1:N) {
+    for(j in 1:M) {
+      y[i] <- y[i] + cos(x[i] * s[j])
+    }
+    y[i] <- y[i] / M
+  }
+   
+  return(y)
+}
+```
+
+If you’ve had any experience with R, you probably recoiled in horror at the sight of those nested for loops. For loops are notoriously slow in R, and the function above is doing $N \times M$ iterations with them. In fact, that’s probably the single worst way I could have written that function. If $N$ and $M$ are small then it doesn’t matter much, but even if $N=M=1000$ (not big at all for most practical applications), look what happens to the runtime:
+
+```{}
+Unit: seconds
+        expr      min       lq     mean  median      uq      max neval
+ func1(x, s) 1.608869 1.650864 1.718337 1.67365 1.77996 2.070576   100
+```
+
+It takes about 1.7 seconds on average to run. This is not ideal, especially in my research, where I need $N=80000$ and $M=10000$ at least, and then I need it to run tens of thousands of times.
+
+## A Faster R Solution
+
+Let’s try a different approach. R has *vectorized* functions, like `mean(x)`, which are much, much faster than doing the equivalent calculation with a loop.
+
+```{r, eval = F}
+func2 <- Vectorize( function(x, s) {
+  mean(cos(x*s))
+}, vectorize.args = 'x')
+```
+
+The calculation is taken care of in one line, `mean(cos(x*s))`. The function is wrapped in `Vectorize`, which tells R to apply the function to every element of `x`, one at a time. If we run this one with $N=M=1000$, we get
+
+```
+Unit: milliseconds
+        expr      min       lq     mean   median       uq      max neval
+ func2(x, s) 27.50761 29.18643 31.93724 31.30861 33.46475 50.32115   100
+```
+
+That’s more like it. This runs in about 30 milliseconds, 50 times faster than the first function. Let’s bump up the sizes to $N=M=10000$ and see what happens.
+
+```
+Unit: seconds
+        expr      min       lq     mean   median       uq      max neval
+ func2(x, s) 1.956879 2.039474 2.186676 2.151696 2.296424 3.011084   100
+```
+
+Hmm. The evaluation time has climbed up to more than 2 seconds. It doesn’t sound like much, but it really adds up when you’re calling this function thousands of times.
+
+## Parallelization with CUDA
+
+We could rewrite the function in C, a lower-level language than R, but this only speeds things up by a factor of 2 or 3 at best. The main reason why this is so slow is that R (and ordinary C as well) is *single-threaded*. This means that R can only do one thing at a time. It takes $x_1$, calculates $\frac{1}{M}\sum^M_{j=1}\cos(x_1s_j)$, then takes $x_2$, calculates $\frac{1}{M}\sum^M_{j=1}\cos(x_2s_j)$, and so on until it hits $x_N$. But there’s no reason that things *must* be evaluated so sequentially. It would save a lot of time if we could do that calculation for lots of different $x_i$’s simultaneously. This is called $parallelization$.
+
+CUDA is an API developed by Nvidia for doing parallel computing on a GPU (graphics processing unit). GPUs are designed with parallel computing in mind. They are essentially made up of thousands of little processors that are organized in such a way that they can split up a task, execute part of it, and recombine the results. Here is a CUDA file that accomplishes our task. I named it `kernel.cu`.
+
+```c
+#include <stdio.h>
+#include <math.h>
+#include <R.h>
+#define TPB 256
+ 
+__device__
+double mcCalc(double x, double *d_samps, int S)
+{
+    double total = 0.0f;
+    for(int i = 0; i < S; ++i)
+    {
+        total += cos(x * d_samps[i]);
+    }
+    return total / S;
+}
+ 
+__global__
+void mcKernel(double *d_vec, double *d_samps, double *d_mat, int N, int S)
+{
+    const int i = blockIdx.x*blockDim.x + threadIdx.x;
+    if(i >= N) return;
+    const double x = d_vec[i];
+    d_mat[i] = mcCalc(x, d_samps, S);
+}
+ 
+extern "C" void mc(double *vec, double *samps, double *mat, int *Np, int *Sp)
+{
+    cudaEvent_t startMemcpy, stopMemcpy;
+    cudaEvent_t startKernel, stopKernel;
+    cudaEventCreate(&startMemcpy);
+    cudaEventCreate(&stopMemcpy);
+    cudaEventCreate(&startKernel);
+    cudaEventCreate(&stopKernel);
+     
+    double *d_vec = 0;
+    double *d_samps = 0;
+    double *d_mat = 0;
+    int N = *Np;
+    int S = *Sp;
+     
+    cudaMalloc(&d_vec, N*sizeof(double));
+    cudaMalloc(&d_samps, S*sizeof(double));
+    cudaMalloc(&d_mat, N*sizeof(double));
+     
+    // Record the event that "starts the clock" on data transfer.
+    cudaEventRecord(startMemcpy);
+    cudaMemcpy(d_vec, vec, N*sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_samps, samps, S*sizeof(double), cudaMemcpyHostToDevice);
+    // Record the event that "stops the clock" on data transfer.
+    cudaEventRecord(stopMemcpy);
+     
+    // Record the event that "starts the clock" on kernel execution.
+    cudaEventRecord(startKernel);
+    mcKernel<<<(N+TPB-1)/TPB, TPB>>>(d_vec, d_samps, d_mat, N, S);
+    // Record the event that "stops the clock" on kernel execution.
+    cudaEventRecord(stopKernel);
+     
+    // Copy result from device to host.
+    cudaMemcpy(mat, d_mat, N*sizeof(double), cudaMemcpyDeviceToHost);
+     
+    // Ensure timed events have stopped.
+    cudaEventSynchronize(stopMemcpy);
+    cudaEventSynchronize(stopKernel);
+     
+    // Convert event records to time and output.
+    float memcpyTimeInMs = 0;
+    cudaEventElapsedTime(&memcpyTimeInMs, startMemcpy, stopMemcpy);
+    float kernelTimeInMs = 0;
+    cudaEventElapsedTime(&kernelTimeInMs, startKernel, stopKernel);
+    printf("Kernel time (ms): %f\n", kernelTimeInMs);
+    printf("Data transfer time (ms): %f\n", memcpyTimeInMs);
+     
+    cudaFree(d_vec);
+    cudaFree(d_samps);
+    cudaFree(d_mat);
+}
+```
+
+## Using CUDA in R
+
+To use this in R, we need to compile it as a shared library object.
+
+```{bash, eval = F}
+nvcc -O3 -I/usr/global/R/3.0.1/include -G --shared -Xcompiler -fPIC -o main.so kernel.cu
+```
+
+Now, in an R session, first we need to load that compiled library with `dyn.load()`, and then we can write a wrapper function around the call to C.
+
+```{r, eval = F}
+func3 <- function(x, s) {
+    tmp <- .C('mc', as.double(x), as.double(s), res = as.double(rep(0.0, length(x))), as.integer(length(x)), as.integer(length(s)))
+    tmp$res
+}
+```
+
+Finally, we can use this function just like any other regular R function. When I tried this with $N=80200$ and $M=10000$, it ran in about a third of a second. Pretty amazing if you ask me.
+
+**NOTE:** If you don’t have an Nvidia GPU in your computer, this will not work for you. I don’t have one in mine, so I needed to use [Penn State’s ICS-ACI computing cluster](https://ics.psu.edu/advanced-cyberinfrastructure/), which was an adventure in itself. I have written [another blog post](/post/2016-09-13-running-cuda-scripts-on-penn-state-s-ics-aci-cluster/) about how to do that.
