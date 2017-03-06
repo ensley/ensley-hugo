@@ -25,3 +25,16 @@ git push origin master
 
 # Come Back
 cd ..
+
+# add other changes to entire project
+git add -A
+
+# commit
+msg="commit to hugo repo `date`"
+if [ $# -eq 1 ]
+	then msg="$1"
+fi
+git commit -m "$msg"
+
+# push source
+git push origin master

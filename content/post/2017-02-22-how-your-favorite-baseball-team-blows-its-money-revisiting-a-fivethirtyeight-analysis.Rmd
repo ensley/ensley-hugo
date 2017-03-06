@@ -9,7 +9,7 @@ categories: ["Sports"]
 ```{r, message=FALSE, warning=FALSE, include=FALSE}
 library(tidyverse)
 library(ggthemes)
-knitr::opts_knit$set(root.dir = '../../data/how-your-favorite-baseball-team-blows-its-money-revisiting-a-fivethirtyeight-analysis/')
+knitr::opts_knit$set(root.dir = './2017-02-22-baseball-data')
 knitr::opts_chunk$set(cache = TRUE)
 ```
 
