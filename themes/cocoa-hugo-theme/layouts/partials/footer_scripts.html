@@ -1,0 +1,24 @@
+<!-- Google Analytics -->
+{{ template "_internal/google_analytics_async.html" . }}
+
+{{ if .Site.Params.highlightjs }}
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.8.0/highlight.min.js"></script>
+  {{ range .Site.Params.highlightjslanguages }}
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.8.0/languages/{{.}}.min.js"></script>
+  {{ end }}
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+      }
+    });
+  </script>
+  <script type="text/javascript"
+    src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+  </script>
+
+  <script type="text/javascript">
+    hljs.initHighlightingOnLoad();
+  </script>
+{{ end }}
